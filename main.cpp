@@ -10,6 +10,7 @@ using json = nlohmann::json;
 // Other stuff
 #include "include/useful_funcs/hashing.h"
 #include "include/useful_funcs/find.h"
+#include "include/custom.h"
 
 
 int main(int argc, char **argv) {
@@ -280,10 +281,11 @@ int main(int argc, char **argv) {
      json anchorPoint = {
         {"anchor", 0}
      };
+
+     Custom custom;
      while (true){
          // Measure the time
-         time_t start, end;
-         start = clock();
+         auto start = std::chrono::high_resolution_clock::now();
 
          // Creating the search query
          src.setURL(source.to_string() + "/_doc/_search");
@@ -320,7 +322,13 @@ int main(int argc, char **argv) {
             /**
              * Specific for this script
              */
-             std::string docID = sha1(doc["_source"]["Title"]);
+
+             doc["_source"]["Category"] = custom.generateCats(doc["_source"]["Category"], doc["_source"]["TrackerId"]);
+             std::string newName = custom.generateName(doc["_source"]["Category"]);
+             if (!newName.empty())
+                doc["_source"]["CategoryDesc"] = newName;
+
+             std::string docID = doc["_id"];
 
              std::pair<json, json> pair;
              json bulkHeader = {
@@ -353,10 +361,10 @@ int main(int argc, char **argv) {
          }
 
          // Capture the time
-         end = clock();
-         double time_taken = double(end - start) / double(CLOCKS_PER_SEC);
+         auto elapsed = std::chrono::high_resolution_clock::now() - start;
+         long long time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
 
-         std::cout << (AMOUNT_INDEXED*100)/TOTAL_DOCUMENTS << "% " << AMOUNT_INDEXED << " / " << TOTAL_DOCUMENTS << ", took: " << std::setprecision(2) << time_taken << "s (" << successes << " documents created)" << std::endl;
+         std::cout << (AMOUNT_INDEXED*100)/TOTAL_DOCUMENTS << "% " << AMOUNT_INDEXED << " / " << TOTAL_DOCUMENTS << ", took: " << std::setprecision(2) << time_taken << "ms (" << successes << " documents created)" << std::endl;
 
          FROM += REQUEST_SIZE;
 
