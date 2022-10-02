@@ -7,6 +7,7 @@
 
 #include <string>
 #include <optional>
+#include <regex>
 
 struct URL{
     std::string protocol;
@@ -25,7 +26,7 @@ struct URL{
     }
 };
 
-std::optional<URL> parse_url(const std::string& url); //with boost
+std::optional<URL> parse_url(const std::string &url);
 
 
 #endif //ELASTICSEARCH_MANAGER_URL_PARSER_H

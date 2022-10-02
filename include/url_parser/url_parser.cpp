@@ -6,14 +6,15 @@
 
 #include <string>
 #include <iostream>
-#include <boost/regex.hpp>
 #include <optional>
+#include <regex>
 
-std::optional<URL> parse_url(const std::string& url) //with boost
+std::optional<URL> parse_url(const std::string &url) //with boost
 {
-    boost::regex ex("(http|https)://([^/ :]+):?([^/ ]*)(/?[^ #?]*)\\x3f?([^ #]*)#?([^ ]*)");
-    boost::cmatch what;
-    if(regex_match(url.c_str(), what, ex))
+    std::regex ex(R"((http|https)://([^/ :]+):?([^/ ]*)(/?[^ #?]*)\x3f?([^ #]*)#?([^ ]*))");
+    std::smatch what;
+
+    if(std::regex_match(url, what, ex))
     {
         std::string protocol = std::string(what[1].first, what[1].second);
         std::string domain   = std::string(what[2].first, what[2].second);

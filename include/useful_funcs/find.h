@@ -11,5 +11,6 @@
 
 
 bool find(const std::string &needle, std::vector<std::string> &haystack);
+bool longFind(const long &needle, std::vector<long> &haystack);
 
 #endif //ELASTICSEARCH_MANAGER_FIND_H

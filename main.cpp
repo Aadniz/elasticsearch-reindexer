@@ -1,10 +1,13 @@
 #include <iostream>
 #include <string>
 
+#define DEBUG false
+
 // Libs
 #include "include/rest.h"
 #include "include/url_parser/url_parser.h"
 #include <nlohmann/json.hpp>
+#include <boost/algorithm/string.hpp>
 using json = nlohmann::json;
 
 // Other stuff
@@ -324,11 +327,19 @@ int main(int argc, char **argv) {
              */
 
              doc["_source"]["Category"] = custom.generateCats(doc["_source"]["Category"], doc["_source"]["TrackerId"]);
+             doc["_source"]["CachedOrigin"] = "reindex (2022-08-28)";
+             doc["_source"]["VirusDetection"] = custom.virusDetection(doc["_source"]);
              std::string newName = custom.generateName(doc["_source"]["Category"]);
              if (!newName.empty())
                 doc["_source"]["CategoryDesc"] = newName;
 
-             std::string docID = doc["_id"];
+             std::string name = doc["_source"]["Title"];
+             //name = std::regex_replace(name, std::regex(R"([' ']{2,})"), " ");
+             std::string::iterator end_pos = std::remove(name.begin(), name.end(), ' ');
+             name.erase(end_pos, name.end());
+             boost::to_lower(name);
+             boost::trim(name);
+             std::string docID = sha1(name);
 
              std::pair<json, json> pair;
              json bulkHeader = {
@@ -345,8 +356,11 @@ int main(int argc, char **argv) {
              lastAnchorPoint["anchor"] = doc["_source"][anchor];
          }
 
+#if !DEBUG // Do not push the data during testing
+
          // Now we do the bulk
          int successes = 0;
+         int updated = 0;
          auto [status2, body2] = dst.bulk(bulk);
          if (body2["errors"] == true) {
              std::cout << "Bulk encountered errors. Please read through my hero" << std::endl;
@@ -357,14 +371,19 @@ int main(int argc, char **argv) {
              if (item["index"]["result"] == "created") {
                  AMOUNT_INDEXED += 1;
                  successes += 1;
+             }else if (item["index"]["result"] == "updated") {
+                 updated += 1;
              }
          }
+#else
+         int successes = 0;
+#endif
 
          // Capture the time
          auto elapsed = std::chrono::high_resolution_clock::now() - start;
          long long time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
 
-         std::cout << (AMOUNT_INDEXED*100)/TOTAL_DOCUMENTS << "% " << AMOUNT_INDEXED << " / " << TOTAL_DOCUMENTS << ", took: " << std::setprecision(2) << time_taken << "ms (" << successes << " documents created)" << std::endl;
+         std::cout << (AMOUNT_INDEXED*100)/TOTAL_DOCUMENTS << "% " << AMOUNT_INDEXED << " / " << TOTAL_DOCUMENTS << ", took: " << std::setprecision(2) << time_taken << "ms (Created: " << successes << ", Updated: "<< updated <<")" << std::endl;
 
          FROM += REQUEST_SIZE;
 
