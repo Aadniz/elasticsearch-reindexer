@@ -13,7 +13,7 @@ using json = nlohmann::json;
 // Other stuff
 #include "include/useful_funcs/hashing.h"
 #include "include/useful_funcs/find.h"
-#include "include/custom.h"
+//#include "include/custom.h"
 
 
 int main(int argc, char **argv) {
@@ -285,7 +285,7 @@ int main(int argc, char **argv) {
         {"anchor", 0}
      };
 
-     Custom custom;
+
      while (true){
          // Measure the time
          auto start = std::chrono::high_resolution_clock::now();
@@ -322,16 +322,6 @@ int main(int argc, char **argv) {
 
          // Adding results to the bulk
          for (auto &doc : body["hits"]["hits"]){
-            /**
-             * Specific for this script
-             */
-
-             doc["_source"]["Category"] = custom.generateCats(doc["_source"]["Category"], doc["_source"]["TrackerId"]);
-             doc["_source"]["CachedOrigin"] = "reindex (2022-08-28)";
-             doc["_source"]["VirusDetection"] = custom.virusDetection(doc["_source"]);
-             std::string newName = custom.generateName(doc["_source"]["Category"]);
-             if (!newName.empty())
-                doc["_source"]["CategoryDesc"] = newName;
 
              std::string name = doc["_source"]["Title"];
              //name = std::regex_replace(name, std::regex(R"([' ']{2,})"), " ");
