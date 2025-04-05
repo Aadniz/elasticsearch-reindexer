@@ -291,7 +291,7 @@ int main(int argc, char **argv) {
          auto start = std::chrono::high_resolution_clock::now();
 
          // Creating the search query
-         src.setURL(source.to_string() + "/_doc/_search");
+         src.setURL(source.to_string() + "/_search");
          json j;
          j["from"] = FROM;
          j["size"] = REQUEST_SIZE;
@@ -300,6 +300,7 @@ int main(int argc, char **argv) {
          auto [status, body] = src.POST(j.dump());
          if (status != 200){
              std::cout << "Failed. Trying again in 10 sec" << std::endl;
+             std::cout << body.dump() << std::endl;
              sleep(10);
              continue;
          }
@@ -322,21 +323,12 @@ int main(int argc, char **argv) {
 
          // Adding results to the bulk
          for (auto &doc : body["hits"]["hits"]){
-
-             std::string name = doc["_source"]["Title"];
-             //name = std::regex_replace(name, std::regex(R"([' ']{2,})"), " ");
-             std::string::iterator end_pos = std::remove(name.begin(), name.end(), ' ');
-             name.erase(end_pos, name.end());
-             boost::to_lower(name);
-             boost::trim(name);
-             std::string docID = sha1(name);
-
+             std::string docID = doc["_id"];
              std::pair<json, json> pair;
              json bulkHeader = {
                      {
                          "index", {
                              {"_index", destination.path.substr(1, destination.path.size() - 1)},
-                             {"_type", "_doc"},
                              {"_id", docID}
                          }
                      }
